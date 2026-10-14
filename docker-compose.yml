@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: booklibrary-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_SA_PASSWORD:-StrongSqlPass_2026!}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: booklibrary-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    ports:
+      - "5080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=BookLibraryDb;User Id=sa;Password=${DB_SA_PASSWORD:-StrongSqlPass_2026!};TrustServerCertificate=True;MultipleActiveResultSets=true
+      - Jwt__Issuer=BookLibrary.Api
+      - Jwt__Audience=BookLibrary.Client
+      - Jwt__SecretKey=${JWT_SECRET_KEY:-ReplaceWithProductionSecretKey_Min32CharactersLong!}
+      - AdminBootstrap__Email=${ADMIN_BOOTSTRAP_EMAIL:-admin@booklibrary.local}
+      - AdminBootstrap__Password=${ADMIN_BOOTSTRAP_PASSWORD:-AdminStrongPass_2026!}
+      - AdminBootstrap__DisplayName=Library Administrator
+
+volumes:
+  sqlserver_data:

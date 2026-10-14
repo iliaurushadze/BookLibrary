@@ -1,0 +1,16 @@
+namespace BookLibrary.Domain.Entities;
+
+public class Genre
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public Guid? ParentGenreId { get; set; }
+    public Genre? ParentGenre { get; set; }
+    public ICollection<Genre> SubGenres { get; set; } = new List<Genre>();
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public ICollection<BookGenre> BookGenres { get; set; } = new List<BookGenre>();
+}
